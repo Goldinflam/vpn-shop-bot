@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from xui_client.client import _BYTES_PER_GB, _bytes_to_gb
 
 
