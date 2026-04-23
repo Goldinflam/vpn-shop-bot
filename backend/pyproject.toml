@@ -35,3 +35,24 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["backend*"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
+mypy_path = "../shared"
+explicit_package_bases = true
+exclude = ["alembic/", "build/", "dist/"]
+
+[[tool.mypy.overrides]]
+module = [
+    "py3xui.*",
+    "apscheduler.*",
+    "yookassa.*",
+    "aiocryptopay.*",
+    "qrcode.*",
+    "xui_client",
+    "xui_client.*",
+]
+ignore_missing_imports = true
+
