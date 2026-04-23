@@ -13,9 +13,11 @@ Plus a text fallback with the VLESS link and a QR-code image.
 from __future__ import annotations
 
 import base64
-from collections.abc import Sequence
+import html
+import logging
 from typing import Final
 
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
     BufferedInputFile,
     InlineKeyboardButton,
@@ -25,6 +27,8 @@ from aiogram.types import (
 from shared.schemas import IssuedVpnOut
 
 from bot.i18n import Translator
+
+logger = logging.getLogger(__name__)
 
 HAPP_DOWNLOAD_URL: Final[str] = "https://happ.su/en/"
 
@@ -72,20 +76,45 @@ async def send_issued_vpn(
     """Send the full issued-VPN UX to a chat.
 
     Two messages are sent in sequence: the header + Happ buttons + VLESS
-    fallback, then the QR code as a photo. This mirrors the product spec
-    and guarantees the user sees a working link even if buttons fail to
-    open (e.g. desktop Telegram without Happ installed).
+    fallback, then the QR code as a photo.
+
+    Robustness: if Telegram rejects the Happ deep-link button (custom URL
+    scheme on some Telegram Desktop builds), we retry without the button
+    and inline the ``happ://`` link as selectable text. Similarly for
+    rendering errors on the photo step.
     """
-    body_parts: Sequence[str] = (
-        t("vpn.issued_header"),
-        t("vpn.vless_fallback", link=issued.vless_link),
+    vless_safe = html.escape(issued.vless_link)
+    body = "\n\n".join(
+        (
+            t("vpn.issued_header"),
+            t("vpn.vless_fallback", link=vless_safe),
+        )
     )
-    await message.answer(
-        "\n\n".join(body_parts),
-        reply_markup=happ_buttons(issued, t),
-        parse_mode="HTML",
-        disable_web_page_preview=True,
-    )
-    qr_bytes = decode_qr(issued)
-    photo = BufferedInputFile(qr_bytes, filename="vpn.png")
-    await message.answer_photo(photo=photo, caption=t("vpn.qr_caption"))
+    try:
+        await message.answer(
+            body,
+            reply_markup=happ_buttons(issued, t),
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+        )
+    except TelegramBadRequest as exc:
+        logger.warning(
+            "Happ inline-button rejected by Telegram, falling back to text: %s", exc
+        )
+        happ_safe = html.escape(issued.happ_import_url)
+        fallback = (
+            f"{body}\n\n"
+            f"{t('vpn.happ_connect')}: <code>{happ_safe}</code>\n"
+            f"{t('vpn.download_happ')}: {HAPP_DOWNLOAD_URL}"
+        )
+        await message.answer(
+            fallback,
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+        )
+    try:
+        qr_bytes = decode_qr(issued)
+        photo = BufferedInputFile(qr_bytes, filename="vpn.png")
+        await message.answer_photo(photo=photo, caption=t("vpn.qr_caption"))
+    except Exception as exc:  # noqa: BLE001 — QR is optional, VPN already delivered
+        logger.warning("QR photo failed to send (VPN delivered): %s", exc)

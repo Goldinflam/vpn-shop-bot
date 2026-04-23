@@ -41,6 +41,35 @@ async def maybe_start_trial(
             await message.answer(t("trial.already_claimed"))
             return
         detail = getattr(exc, "message", "") or str(exc)
-        await message.answer(f"{t('trial.failed')}\n<code>{detail}</code>", parse_mode="HTML")
+        await message.answer(
+            f"{t('trial.failed')}\n<code>{_truncate(detail)}</code>",
+            parse_mode="HTML",
+        )
         return
-    await send_issued_vpn(message, issued, t)
+    except Exception as exc:  # noqa: BLE001 — surface parsing / unexpected errors
+        logger.exception("create_trial unexpected error for tg_id=%s", message.from_user.id)
+        await message.answer(
+            f"{t('trial.failed')}\n<code>{_truncate(str(exc))}</code>",
+            parse_mode="HTML",
+        )
+        return
+    try:
+        await send_issued_vpn(message, issued, t)
+    except Exception as exc:  # noqa: BLE001 — VPN issued, but rendering failed
+        logger.exception(
+            "send_issued_vpn failed for tg_id=%s — client IS created, rendering only failed",
+            message.from_user.id,
+        )
+        await message.answer(
+            "VPN выдан, но не удалось отрендерить кнопки. Вот ваша ссылка:\n"
+            f"<code>{issued.vless_link}</code>\n\n<i>{_truncate(str(exc))}</i>",
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+        )
+
+
+def _truncate(text: str, limit: int = 400) -> str:
+    """Truncate free-form error text so the Telegram message stays under 4096 chars."""
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1] + "…"
