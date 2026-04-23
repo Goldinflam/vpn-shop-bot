@@ -21,6 +21,7 @@ dev = [
     "pytest-httpx>=0.30",
     "ruff>=0.4",
     "mypy>=1.10",
+    "types-qrcode>=7.4",
 ]
 
 [tool.setuptools.packages.find]
