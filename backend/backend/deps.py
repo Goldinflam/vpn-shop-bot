@@ -14,6 +14,7 @@ from backend.db import get_sessionmaker
 from backend.services import (
     PaymentService,
     PlanService,
+    PromoService,
     SubscriptionService,
     UserService,
 )
@@ -75,7 +76,15 @@ def get_payment_service(
     return PaymentService(session, subscription_service)
 
 
+def get_promo_service(
+    session: SessionDep,
+    subscription_service: Annotated[SubscriptionService, Depends(get_subscription_service)],
+) -> PromoService:
+    return PromoService(session, subscription_service)
+
+
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
 PlanServiceDep = Annotated[PlanService, Depends(get_plan_service)]
 SubscriptionServiceDep = Annotated[SubscriptionService, Depends(get_subscription_service)]
 PaymentServiceDep = Annotated[PaymentService, Depends(get_payment_service)]
+PromoServiceDep = Annotated[PromoService, Depends(get_promo_service)]

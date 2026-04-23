@@ -14,11 +14,15 @@ from typing import Any, Self
 import httpx
 from shared.contracts import http as http_contract
 from shared.schemas import (
+    IssuedVpnOut,
     PaymentCreate,
     PaymentOut,
     PlanOut,
+    PromoApplyIn,
+    PromoApplyOut,
     SubscriptionOut,
     SubscriptionRenew,
+    TrialCreateIn,
     UserOut,
     UserUpsert,
 )
@@ -226,6 +230,32 @@ class BackendClient:
             http_contract.SUBSCRIPTION_QR.format(subscription_id=subscription_id),
         )
         return response.content
+
+    async def subscription_issued(self, subscription_id: int) -> IssuedVpnOut:
+        """Return the unified ``IssuedVpnOut`` for a subscription."""
+        response = await self._request(
+            "GET",
+            http_contract.SUBSCRIPTION_ISSUED.format(subscription_id=subscription_id),
+        )
+        return IssuedVpnOut.model_validate(response.json())
+
+    # ---- trial & promo --------------------------------------------
+
+    async def create_trial(self, telegram_id: int) -> IssuedVpnOut:
+        response = await self._request(
+            "POST",
+            http_contract.TRIAL_CREATE,
+            json=TrialCreateIn(telegram_id=telegram_id).model_dump(mode="json"),
+        )
+        return IssuedVpnOut.model_validate(response.json())
+
+    async def apply_promo(self, telegram_id: int, code: str) -> PromoApplyOut:
+        response = await self._request(
+            "POST",
+            http_contract.PROMO_APPLY,
+            json=PromoApplyIn(telegram_id=telegram_id, code=code).model_dump(mode="json"),
+        )
+        return PromoApplyOut.model_validate(response.json())
 
     # ---- admin -----------------------------------------------------
 

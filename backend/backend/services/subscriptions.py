@@ -21,6 +21,9 @@ from backend.models import Payment, Plan, Subscription, User
 _BYTES_PER_GB = 1024 * 1024 * 1024
 
 
+TRIAL_PLAN_NAME = "__trial__"
+
+
 def _as_utc(value: datetime) -> datetime:
     """Return a UTC-aware copy of ``value``.
 
@@ -90,6 +93,7 @@ class SubscriptionService:
             xui_inbound_id=result.inbound_id,
             xui_email=result.email,
             vless_link=result.vless_link,
+            subscription_url=result.subscription_url,
             traffic_limit_bytes=traffic_limit,
             traffic_used_bytes=0,
             starts_at=now,
@@ -133,6 +137,81 @@ class SubscriptionService:
         await self._session.flush()
         await self._session.refresh(subscription)
         return subscription
+
+    async def create_free(
+        self,
+        *,
+        user: User,
+        days: int,
+        traffic_gb: int,
+    ) -> Subscription:
+        """Provision a subscription without going through payment flow.
+
+        Used by trial and trial-promo redemption. The subscription is attached
+        to a reserved ``__trial__`` plan (created on demand) so existing
+        queries that join ``subscriptions.plan_id`` keep working.
+        """
+        plan = await self._get_or_create_trial_plan(days=days, traffic_gb=traffic_gb)
+        now = datetime.now(UTC)
+        expires_at = now + timedelta(days=days)
+        traffic_limit = traffic_gb * _BYTES_PER_GB
+        email = f"tg{user.telegram_id}-trial-{int(now.timestamp())}"
+        inbound_id = self._settings.xui_inbound_id
+
+        try:
+            result = await self._xui.create_vless_client(
+                inbound_id=inbound_id,
+                email=email,
+                expire_ts_ms=int(expires_at.timestamp() * 1000),
+                traffic_limit_bytes=traffic_limit,
+                telegram_id=user.telegram_id,
+            )
+        except XUIError as exc:
+            raise SubscriptionError(f"Failed to create VLESS client: {exc}") from exc
+
+        subscription = Subscription(
+            user_id=user.id,
+            plan_id=plan.id,
+            xui_client_uuid=result.client_uuid,
+            xui_inbound_id=result.inbound_id,
+            xui_email=result.email,
+            vless_link=result.vless_link,
+            subscription_url=result.subscription_url,
+            traffic_limit_bytes=traffic_limit,
+            traffic_used_bytes=0,
+            starts_at=now,
+            expires_at=expires_at,
+            status=SubscriptionStatus.ACTIVE,
+        )
+        self._session.add(subscription)
+        await self._session.flush()
+        await self._session.refresh(subscription)
+        return subscription
+
+    async def _get_or_create_trial_plan(self, *, days: int, traffic_gb: int) -> Plan:
+        from decimal import Decimal
+
+        from shared.enums import Currency
+
+        result = await self._session.execute(
+            select(Plan).where(Plan.name == TRIAL_PLAN_NAME)
+        )
+        plan = result.scalar_one_or_none()
+        if plan is None:
+            plan = Plan(
+                name=TRIAL_PLAN_NAME,
+                description="Reserved plan for trial / promo subscriptions",
+                duration_days=days,
+                traffic_gb=traffic_gb,
+                price=Decimal("0"),
+                currency=Currency.RUB,
+                is_active=False,
+                sort_order=-1,
+            )
+            self._session.add(plan)
+            await self._session.flush()
+            await self._session.refresh(plan)
+        return plan
 
     async def get(self, subscription_id: int) -> Subscription:
         sub = await self._session.get(Subscription, subscription_id)

@@ -18,6 +18,7 @@ from bot.keyboards.inline import (
     providers_keyboard,
 )
 from bot.states.buy import BuyFlow
+from bot.utils.happ import send_issued_vpn
 
 logger = logging.getLogger(__name__)
 
@@ -191,11 +192,8 @@ async def on_check_payment(
 
     if payment.status == PaymentStatus.SUCCEEDED and payment.subscription_id is not None:
         try:
-            sub = await backend.get_subscription(payment.subscription_id)
+            issued = await backend.subscription_issued(payment.subscription_id)
         except BackendError:
             return
         if callback.message is not None and isinstance(callback.message, Message):
-            await callback.message.answer(
-                t("subs.link_message", link=sub.vless_link),
-                parse_mode="HTML",
-            )
+            await send_issued_vpn(callback.message, issued, t)

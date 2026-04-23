@@ -2,12 +2,14 @@
 
 from backend.services.payments import PaymentService
 from backend.services.plans import PlanService
+from backend.services.promos import PromoService
 from backend.services.subscriptions import SubscriptionService
 from backend.services.users import UserService
 
 __all__ = [
     "PaymentService",
     "PlanService",
+    "PromoService",
     "SubscriptionService",
     "UserService",
 ]

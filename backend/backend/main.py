@@ -17,6 +17,7 @@ from backend.routers import (
     health_router,
     payments_router,
     plans_router,
+    promos_router,
     subscriptions_router,
     users_router,
 )
@@ -57,6 +58,7 @@ def create_app() -> FastAPI:
     app.include_router(plans_router, prefix=API_PREFIX)
     app.include_router(subscriptions_router, prefix=API_PREFIX)
     app.include_router(payments_router, prefix=API_PREFIX)
+    app.include_router(promos_router, prefix=API_PREFIX)
     app.include_router(admin_router, prefix=API_PREFIX)
 
     return app
