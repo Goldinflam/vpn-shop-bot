@@ -68,9 +68,21 @@ async def on_promo_code(
     try:
         result = await backend.apply_promo(message.from_user.id, code)
     except BackendError as exc:
-        logger.info("apply_promo failed: %s", exc)
+        logger.warning(
+            "apply_promo failed for tg_id=%s code=%s: status=%s detail=%s",
+            message.from_user.id,
+            code,
+            getattr(exc, "status_code", 0),
+            getattr(exc, "message", ""),
+        )
         key = _map_error_key(exc)
-        await message.answer(t(key))
+        if key == "promo.error":
+            detail = getattr(exc, "message", "") or str(exc)
+            await message.answer(
+                f"{t(key)}\n<code>{detail}</code>", parse_mode="HTML"
+            )
+        else:
+            await message.answer(t(key))
         return
 
     if result.is_trial and result.issued is not None:

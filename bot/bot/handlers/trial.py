@@ -31,12 +31,16 @@ async def maybe_start_trial(
     try:
         issued = await backend.create_trial(message.from_user.id)
     except BackendError as exc:
-        logger.info("create_trial failed: %s", exc)
-        message_key = (
-            "trial.already_claimed"
-            if getattr(exc, "status_code", 0) == 409
-            else "trial.failed"
+        logger.warning(
+            "create_trial failed for tg_id=%s: status=%s detail=%s",
+            message.from_user.id,
+            getattr(exc, "status_code", 0),
+            getattr(exc, "message", ""),
         )
-        await message.answer(t(message_key))
+        if getattr(exc, "status_code", 0) == 409:
+            await message.answer(t("trial.already_claimed"))
+            return
+        detail = getattr(exc, "message", "") or str(exc)
+        await message.answer(f"{t('trial.failed')}\n<code>{detail}</code>", parse_mode="HTML")
         return
     await send_issued_vpn(message, issued, t)
