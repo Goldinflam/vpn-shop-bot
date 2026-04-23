@@ -20,15 +20,28 @@ jobs:
         run: |
           pip install -U pip
           pip install -e ./shared[dev]
-          pip install -e ./xui_client[dev] || echo "xui_client not ready yet"
-          pip install -e ./backend[dev] || echo "backend not ready yet"
-          pip install -e ./bot[dev] || echo "bot not ready yet"
+          pip install -e ./xui_client[dev]
+          pip install -e ./backend[dev]
+          pip install -e ./bot[dev]
 
       - name: Ruff
         run: ruff check .
 
       - name: Mypy (shared)
-        run: mypy shared
+        working-directory: shared
+        run: mypy shared --strict
+
+      - name: Mypy (xui_client)
+        working-directory: xui_client
+        run: mypy xui_client --strict
+
+      - name: Mypy (backend)
+        working-directory: backend
+        run: mypy backend
+
+      - name: Mypy (bot)
+        working-directory: bot
+        run: mypy bot --strict
 
       - name: Pytest
-        run: pytest -v
+        run: pytest shared xui_client backend bot -v

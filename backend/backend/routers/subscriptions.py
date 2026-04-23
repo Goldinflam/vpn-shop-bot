@@ -66,5 +66,5 @@ async def get_subscription_qr(
     sub = await service.get(subscription_id)
     img = qrcode.make(sub.vless_link)
     buf = io.BytesIO()
-    img.save(buf, format="PNG")
+    img.save(buf)
     return Response(content=buf.getvalue(), media_type="image/png")
