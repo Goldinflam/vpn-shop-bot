@@ -22,6 +22,7 @@ from backend.routers import (
     users_router,
 )
 from backend.scheduler import build_scheduler
+from backend.xui import get_xui_client, start_xui_client
 
 
 def _configure_logging() -> None:
@@ -38,6 +39,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     cfg = get_settings()
     scheduler: AsyncIOScheduler | None = None
     if cfg.environment != "test":
+        await start_xui_client(get_xui_client())
         scheduler = build_scheduler(cfg)
         scheduler.start()
     app.state.scheduler = scheduler

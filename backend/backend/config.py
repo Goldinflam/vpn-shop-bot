@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     xui_password: str = "admin"  # noqa: S105
     xui_inbound_id: int = 1
     xui_use_tls_verify: bool = True
+    xui_sub_base_url: str = ""
 
     # --- YooKassa ---
     yookassa_shop_id: str = ""
