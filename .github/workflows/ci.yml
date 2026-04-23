@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install packages
+        run: |
+          pip install -U pip
+          pip install -e ./shared[dev]
+          pip install -e ./xui_client[dev] || echo "xui_client not ready yet"
+          pip install -e ./backend[dev] || echo "backend not ready yet"
+          pip install -e ./bot[dev] || echo "bot not ready yet"
+
+      - name: Ruff
+        run: ruff check .
+
+      - name: Mypy (shared)
+        run: mypy shared
+
+      - name: Pytest
+        run: pytest -v
