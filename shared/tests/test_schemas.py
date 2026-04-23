@@ -21,7 +21,7 @@ def test_payment_create_enum() -> None:
 
 
 def test_subscription_status_values() -> None:
-    assert SubscriptionStatus.ACTIVE == "active"
+    assert SubscriptionStatus.ACTIVE.value == "active"
     assert set(SubscriptionStatus) == {
         SubscriptionStatus.PENDING,
         SubscriptionStatus.ACTIVE,
