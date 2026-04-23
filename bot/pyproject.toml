@@ -27,3 +27,15 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["bot*"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
+mypy_path = "../shared"
+explicit_package_bases = true
+exclude = ["build/", "dist/"]
+
+[[tool.mypy.overrides]]
+module = ["aiogram.*", "aiogram_i18n.*", "babel.*"]
+ignore_missing_imports = true
