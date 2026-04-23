@@ -22,3 +22,6 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["shared*"]
+
+[tool.setuptools.package-data]
+shared = ["py.typed"]
