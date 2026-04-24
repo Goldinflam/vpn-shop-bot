@@ -10,6 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.api_client import BackendClient, BackendError
+from bot.filters import MenuButton
 from bot.i18n import Translator
 from bot.states.promo import PromoFlow
 from bot.utils.happ import send_issued_vpn
@@ -27,15 +28,13 @@ _ERROR_CODE_TO_KEY: dict[str, str] = {
 }
 
 
-@router.message(F.text)
+@router.message(MenuButton("menu.promo"))
 async def maybe_open_promo(
     message: Message,
     t: Translator,
     state: FSMContext,
 ) -> None:
     """Fast-path: text equals the localized "Enter promo code" button."""
-    if not message.text or message.text != t("menu.promo"):
-        return
     await state.set_state(PromoFlow.awaiting_code)
     await message.answer(t("promo.prompt"))
 

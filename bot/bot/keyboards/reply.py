@@ -10,8 +10,8 @@ from bot.i18n import Translator
 def main_menu(t: Translator) -> ReplyKeyboardMarkup:
     """Build the main menu keyboard localized with ``t``.
 
-    Five action buttons in the order requested by product:
-    trial, plans, my subs, promo, help.
+    Six action buttons in the order requested by product:
+    trial, plans, my subs, promo, help, support.
     """
     return ReplyKeyboardMarkup(
         keyboard=[
@@ -24,6 +24,7 @@ def main_menu(t: Translator) -> ReplyKeyboardMarkup:
                 KeyboardButton(text=t("menu.promo")),
                 KeyboardButton(text=t("menu.help")),
             ],
+            [KeyboardButton(text=t("menu.support"))],
         ],
         resize_keyboard=True,
     )

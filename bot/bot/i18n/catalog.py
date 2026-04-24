@@ -27,7 +27,13 @@ _RU: Final[dict[str, str]] = {
     "menu.my_subs": "📦 Мои подписки",
     "menu.promo": "🎁 Ввести промокод",
     "menu.help": "❓ Помощь",
+    "menu.support": "🆘 Поддержка",
     "menu.language": "🌐 Язык",
+    "support.message": (
+        "Если что-то не работает — напишите в поддержку: @Hael_support\n"
+        "Мы быстро поможем."
+    ),
+    "support.open_chat": "🆘 Написать в поддержку",
     # trial / promo / happ
     "trial.intro": "Активирую бесплатный пробный доступ…",
     "trial.already_claimed": (
@@ -117,7 +123,13 @@ _EN: Final[dict[str, str]] = {
     "menu.my_subs": "📦 My subscriptions",
     "menu.promo": "🎁 Enter promo code",
     "menu.help": "❓ Help",
+    "menu.support": "🆘 Support",
     "menu.language": "🌐 Language",
+    "support.message": (
+        "Need help? Contact support: @Hael_support\n"
+        "We respond quickly."
+    ),
+    "support.open_chat": "🆘 Open support chat",
     "trial.intro": "Activating your free trial…",
     "trial.already_claimed": (
         "You've already used your free trial. Check 💰 Plans in the menu."

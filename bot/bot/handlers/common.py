@@ -7,6 +7,7 @@ from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 from shared.enums import Locale
 
+from bot.filters import MenuButton
 from bot.i18n import I18n, Translator
 from bot.keyboards.inline import language_keyboard
 from bot.keyboards.reply import main_menu
@@ -20,10 +21,8 @@ async def handle_cancel(message: Message, t: Translator) -> None:
     await message.answer(t("common.cancel"), reply_markup=main_menu(t))
 
 
-@router.message(F.text)
+@router.message(MenuButton("menu.language"))
 async def maybe_open_language(message: Message, t: Translator) -> None:
-    if not message.text or message.text != t("menu.language"):
-        return
     await message.answer(t("language.pick"), reply_markup=language_keyboard(t))
 
 
