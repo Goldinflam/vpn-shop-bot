@@ -11,6 +11,7 @@ from shared.enums import PaymentProvider, PaymentStatus
 from shared.schemas import PaymentCreate
 
 from bot.api_client import BackendClient, BackendError
+from bot.filters import MenuButton
 from bot.i18n import Translator
 from bot.keyboards.inline import (
     payment_keyboard,
@@ -18,17 +19,14 @@ from bot.keyboards.inline import (
     providers_keyboard,
 )
 from bot.states.buy import BuyFlow
+from bot.utils.happ import send_issued_vpn
 
 logger = logging.getLogger(__name__)
 
 router = Router(name="buy")
 
 
-def _menu_buy_filter(value: str, t: Translator) -> bool:
-    return value == t("menu.buy")
-
-
-@router.message(F.text)
+@router.message(MenuButton("menu.buy"))
 async def maybe_open_buy(
     message: Message,
     t: Translator,
@@ -36,8 +34,6 @@ async def maybe_open_buy(
     state: FSMContext,
 ) -> None:
     """Fast-path: text equals the localized 'Buy' button."""
-    if not message.text or message.text != t("menu.buy"):
-        return
     await _open_plans(message, t, backend, state)
 
 
@@ -191,11 +187,8 @@ async def on_check_payment(
 
     if payment.status == PaymentStatus.SUCCEEDED and payment.subscription_id is not None:
         try:
-            sub = await backend.get_subscription(payment.subscription_id)
+            issued = await backend.subscription_issued(payment.subscription_id)
         except BackendError:
             return
         if callback.message is not None and isinstance(callback.message, Message):
-            await callback.message.answer(
-                t("subs.link_message", link=sub.vless_link),
-                parse_mode="HTML",
-            )
+            await send_issued_vpn(callback.message, issued, t)

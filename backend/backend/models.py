@@ -50,6 +50,9 @@ class User(Base):
     is_banned: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="0"
     )
+    trial_used: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="0"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -64,6 +67,9 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
     payments: Mapped[list[Payment]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    promo_usages: Mapped[list[PromoUsage]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -112,6 +118,7 @@ class Subscription(Base):
     xui_inbound_id: Mapped[int] = mapped_column(Integer, nullable=False)
     xui_email: Mapped[str] = mapped_column(String(128), nullable=False)
     vless_link: Mapped[str] = mapped_column(Text, nullable=False)
+    subscription_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     traffic_limit_bytes: Mapped[int] = mapped_column(
         BigInteger, nullable=False, default=0, server_default="0"
     )
@@ -182,3 +189,77 @@ class Payment(Base):
     user: Mapped[User] = relationship(back_populates="payments")
     plan: Mapped[Plan] = relationship()
     subscription: Mapped[Subscription | None] = relationship()
+
+
+class PromoCode(Base):
+    __tablename__ = "promo_codes"
+    __table_args__ = (UniqueConstraint("code", name="uq_promo_codes_code"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    code: Mapped[str] = mapped_column(String(64), nullable=False)
+    is_trial: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="0"
+    )
+    #: For trial promos — subscription length in days.
+    trial_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    #: For trial promos — traffic cap (GB). 0 = unlimited.
+    trial_traffic_gb: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    #: For discount promos — percent off on next paid purchase (0..100).
+    discount_percent: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    #: Global usage cap across all users. ``None`` = unlimited.
+    usage_limit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    used_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    #: Per-user cap. Default ``1`` — typical "each user can redeem once".
+    per_user_limit: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+    valid_from: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    valid_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="1"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    usages: Mapped[list[PromoUsage]] = relationship(
+        back_populates="promo", cascade="all, delete-orphan"
+    )
+
+
+class PromoUsage(Base):
+    __tablename__ = "promo_usages"
+    __table_args__ = (
+        UniqueConstraint(
+            "promo_code_id", "user_id", name="uq_promo_usages_promo_user"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    promo_code_id: Mapped[int] = mapped_column(
+        ForeignKey("promo_codes.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    subscription_id: Mapped[int | None] = mapped_column(
+        ForeignKey("subscriptions.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    promo: Mapped[PromoCode] = relationship(back_populates="usages")
+    user: Mapped[User] = relationship(back_populates="promo_usages")

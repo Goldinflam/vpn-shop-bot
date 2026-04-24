@@ -62,6 +62,7 @@ async def run() -> None:
         admin_token=(
             settings.admin_api_token.get_secret_value() if settings.admin_api_token else None
         ),
+        timeout=settings.backend_timeout_s,
     )
     i18n = I18n(default_locale=settings.default_locale)
     locale_store = LocaleStore()

@@ -9,8 +9,10 @@ from shared.enums import Locale
 
 def test_translator_picks_locale() -> None:
     i18n = I18n(default_locale=Locale.RU)
-    assert i18n.translator(Locale.RU)("menu.buy") == "🛒 Купить"
-    assert i18n.translator(Locale.EN)("menu.buy") == "🛒 Buy"
+    assert i18n.translator(Locale.RU)("menu.buy") == "💰 Тарифы"
+    assert i18n.translator(Locale.EN)("menu.buy") == "💰 Plans"
+    assert i18n.translator(Locale.RU)("menu.trial") == "🚀 Попробовать бесплатно"
+    assert i18n.translator(Locale.RU)("menu.promo") == "🎁 Ввести промокод"
 
 
 def test_translator_formats_placeholders() -> None:

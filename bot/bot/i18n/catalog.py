@@ -22,10 +22,47 @@ _RU: Final[dict[str, str]] = {
         "Привет, {name}! 👋\nЭто бот для покупки VPN-подписок.\n"
         "Выберите действие в меню ниже."
     ),
-    "menu.buy": "🛒 Купить",
+    "menu.trial": "🚀 Попробовать бесплатно",
+    "menu.buy": "💰 Тарифы",
     "menu.my_subs": "📦 Мои подписки",
+    "menu.promo": "🎁 Ввести промокод",
     "menu.help": "❓ Помощь",
+    "menu.support": "🆘 Поддержка",
     "menu.language": "🌐 Язык",
+    "support.message": (
+        "Если что-то не работает — напишите в поддержку: @Hael_support\n"
+        "Мы быстро поможем."
+    ),
+    "support.open_chat": "🆘 Написать в поддержку",
+    # trial / promo / happ
+    "trial.intro": "Активирую бесплатный пробный доступ…",
+    "trial.already_claimed": (
+        "Вы уже использовали бесплатный триал. Посмотрите тарифы в меню 💰."
+    ),
+    "trial.failed": "Не удалось выдать триал. Попробуйте позже.",
+    "promo.prompt": (
+        "Отправьте промокод одним сообщением. Для выхода — /cancel."
+    ),
+    "promo.applied_discount": (
+        "Промокод принят! Скидка {percent}% применится к следующей оплате."
+    ),
+    "promo.applied_trial": "Промокод принят, выдаю VPN…",
+    "promo.not_found": "Такой промокод не найден или больше недоступен.",
+    "promo.expired": "Срок действия промокода истёк.",
+    "promo.exhausted": "Лимит использований промокода исчерпан.",
+    "promo.already_used": "Этот промокод уже применён.",
+    "promo.trial_claimed": "Бесплатный триал уже использован.",
+    "promo.error": "Не удалось применить промокод. Попробуйте позже.",
+    "promo.cancelled": "Ввод промокода отменён.",
+    "vpn.issued_header": (
+        "✅ VPN готов!\n\n"
+        "Нажмите «🚀 Подключиться» — Happ сам импортирует подписку."
+    ),
+    "vpn.happ_connect": "🚀 Подключиться",
+    "vpn.open_subscription": "🔄 Открыть подписку",
+    "vpn.download_happ": "📥 Скачать Happ",
+    "vpn.vless_fallback": "Ручная ссылка (если кнопки не работают):\n<code>{link}</code>",
+    "vpn.qr_caption": "QR-код для импорта",
     # buy flow
     "buy.pick_plan": "Выберите тариф:",
     "buy.no_plans": "Сейчас нет доступных тарифов. Загляните позже.",
@@ -81,10 +118,44 @@ _EN: Final[dict[str, str]] = {
         "Hi, {name}! 👋\nThis bot sells VPN subscriptions.\n"
         "Pick an action from the menu below."
     ),
-    "menu.buy": "🛒 Buy",
+    "menu.trial": "🚀 Try for free",
+    "menu.buy": "💰 Plans",
     "menu.my_subs": "📦 My subscriptions",
+    "menu.promo": "🎁 Enter promo code",
     "menu.help": "❓ Help",
+    "menu.support": "🆘 Support",
     "menu.language": "🌐 Language",
+    "support.message": (
+        "Need help? Contact support: @Hael_support\n"
+        "We respond quickly."
+    ),
+    "support.open_chat": "🆘 Open support chat",
+    "trial.intro": "Activating your free trial…",
+    "trial.already_claimed": (
+        "You've already used your free trial. Check 💰 Plans in the menu."
+    ),
+    "trial.failed": "Failed to issue trial. Try again later.",
+    "promo.prompt": "Send your promo code as a single message. /cancel to abort.",
+    "promo.applied_discount": (
+        "Promo applied! {percent}% discount will be used on your next payment."
+    ),
+    "promo.applied_trial": "Promo accepted, issuing VPN…",
+    "promo.not_found": "Promo code not found or no longer available.",
+    "promo.expired": "The promo code has expired.",
+    "promo.exhausted": "Promo code usage limit reached.",
+    "promo.already_used": "This promo has already been redeemed.",
+    "promo.trial_claimed": "Free trial has already been used.",
+    "promo.error": "Failed to apply promo code. Try again later.",
+    "promo.cancelled": "Promo entry cancelled.",
+    "vpn.issued_header": (
+        "✅ VPN is ready!\n\n"
+        "Tap \"🚀 Connect\" — Happ will import the subscription automatically."
+    ),
+    "vpn.happ_connect": "🚀 Connect",
+    "vpn.open_subscription": "🔄 Open subscription",
+    "vpn.download_happ": "📥 Download Happ",
+    "vpn.vless_fallback": "Manual link (if buttons don't work):\n<code>{link}</code>",
+    "vpn.qr_caption": "QR code to import",
     "buy.pick_plan": "Pick a plan:",
     "buy.no_plans": "No plans available right now. Please check back later.",
     "buy.plan_card": (

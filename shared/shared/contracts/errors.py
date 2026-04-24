@@ -44,3 +44,27 @@ class PaymentProviderError(PaymentError):
 
 class SubscriptionError(VPNShopError):
     """Subscription-related business error."""
+
+
+class PromoError(VPNShopError):
+    """Base class for promo-code business errors."""
+
+
+class PromoNotFoundError(PromoError):
+    """Promo code does not exist or is inactive."""
+
+
+class PromoExpiredError(PromoError):
+    """Promo code is outside its validity window."""
+
+
+class PromoExhaustedError(PromoError):
+    """Promo global usage limit is reached."""
+
+
+class PromoAlreadyUsedError(PromoError):
+    """User has already redeemed this promo code up to per-user limit."""
+
+
+class TrialAlreadyClaimedError(VPNShopError):
+    """User has already claimed their free trial."""

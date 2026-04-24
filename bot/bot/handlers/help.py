@@ -6,6 +6,7 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery, Message
 from shared.enums import Locale
 
+from bot.filters import MenuButton
 from bot.i18n import Translator
 from bot.keyboards.inline import help_os_keyboard
 from bot.utils.vpn_instructions import get_instructions
@@ -13,10 +14,8 @@ from bot.utils.vpn_instructions import get_instructions
 router = Router(name="help")
 
 
-@router.message(F.text)
+@router.message(MenuButton("menu.help"))
 async def maybe_open_help(message: Message, t: Translator) -> None:
-    if not message.text or message.text != t("menu.help"):
-        return
     await message.answer(t("help.pick_os"), reply_markup=help_os_keyboard(t))
 
 

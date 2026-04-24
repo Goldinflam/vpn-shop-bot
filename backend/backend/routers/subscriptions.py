@@ -8,11 +8,13 @@ import qrcode
 from fastapi import APIRouter, Depends, Response
 from shared.contracts.http import (
     SUBSCRIPTION_GET,
+    SUBSCRIPTION_ISSUED,
     SUBSCRIPTION_QR,
     SUBSCRIPTION_RENEW,
 )
 from shared.enums import PaymentProvider
 from shared.schemas import (
+    IssuedVpnOut,
     PaymentOut,
     SubscriptionOut,
     SubscriptionRenew,
@@ -25,6 +27,7 @@ from backend.deps import (
     SubscriptionServiceDep,
     require_bot_token,
 )
+from backend.services.issuance import issued_vpn_from_subscription
 from backend.services.users import UserService
 
 router = APIRouter(tags=["subscriptions"], dependencies=[Depends(require_bot_token)])
@@ -64,7 +67,16 @@ async def get_subscription_qr(
     subscription_id: int, service: SubscriptionServiceDep
 ) -> Response:
     sub = await service.get(subscription_id)
-    img = qrcode.make(sub.vless_link)
+    payload = sub.subscription_url or sub.vless_link
+    img = qrcode.make(payload)
     buf = io.BytesIO()
     img.save(buf)
     return Response(content=buf.getvalue(), media_type="image/png")
+
+
+@router.get(SUBSCRIPTION_ISSUED, response_model=IssuedVpnOut)
+async def get_subscription_issued(
+    subscription_id: int, service: SubscriptionServiceDep
+) -> IssuedVpnOut:
+    sub = await service.get(subscription_id)
+    return issued_vpn_from_subscription(sub)
