@@ -1,16 +1,17 @@
-"""Filter that matches a single localized reply-keyboard button.
+"""Filter that matches a single main-menu reply button by i18n key.
 
-Previously every menu handler used ``@router.message(F.text)`` and
-early-returned inside the body when the text didn't match. In aiogram v3
-that is a bug: once a filter matches (``F.text`` matches any text), the
-event is considered handled and propagation to the next router stops —
-even if the handler itself does nothing. This broke every menu button
-except the first one registered ("🚀 Попробовать бесплатно").
+aiogram v3 filters run BEFORE inner middlewares, so the
+:class:`~bot.i18n.Translator` isn't available in filter data (it is
+injected by :class:`~bot.middlewares.i18n.I18nMiddleware`, which is an
+inner middleware). An earlier version of this filter accepted ``t`` as
+a kwarg and crashed every update with::
 
-:class:`MenuButton` resolves the localized label per request through the
-injected :class:`~bot.i18n.Translator` and returns ``True`` only when the
-message text matches it exactly, so non-matching messages cleanly fall
-through to the next router.
+    TypeError: MenuButton.__call__() missing 1 required positional
+    argument: 't'
+
+Fix: resolve the set of acceptable labels at construction time from the
+static i18n catalog — one label per supported locale — and compare
+``message.text`` against that set. No runtime translator needed.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from __future__ import annotations
 from aiogram.filters import BaseFilter
 from aiogram.types import Message
 
-from bot.i18n import Translator
+from bot.i18n.catalog import CATALOG
 
 
 class MenuButton(BaseFilter):
@@ -26,8 +27,14 @@ class MenuButton(BaseFilter):
 
     def __init__(self, key: str) -> None:
         self.key = key
+        labels: set[str] = set()
+        for locale_catalog in CATALOG.values():
+            label = locale_catalog.get(key)
+            if label:
+                labels.add(label)
+        self._labels = frozenset(labels)
 
-    async def __call__(self, message: Message, t: Translator) -> bool:
+    async def __call__(self, message: Message) -> bool:
         if not message.text:
             return False
-        return message.text == t(self.key)
+        return message.text in self._labels
