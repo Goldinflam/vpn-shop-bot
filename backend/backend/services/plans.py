@@ -23,9 +23,7 @@ class PlanService:
         return list(result.scalars().all())
 
     async def list_all(self) -> list[Plan]:
-        result = await self._session.execute(
-            select(Plan).order_by(Plan.sort_order, Plan.id)
-        )
+        result = await self._session.execute(select(Plan).order_by(Plan.sort_order, Plan.id))
         return list(result.scalars().all())
 
     async def get(self, plan_id: int) -> Plan:

@@ -48,9 +48,7 @@ class UserService:
         return user
 
     async def get_by_telegram_id(self, telegram_id: int) -> User:
-        result = await self._session.execute(
-            select(User).where(User.telegram_id == telegram_id)
-        )
+        result = await self._session.execute(select(User).where(User.telegram_id == telegram_id))
         user = result.scalar_one_or_none()
         if user is None:
             raise NotFoundError(f"User with telegram_id={telegram_id} not found")

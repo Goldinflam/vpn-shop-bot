@@ -17,9 +17,9 @@ class VlessClientResult:
     client_uuid: str
     email: str
     inbound_id: int
-    vless_link: str          # vless://...   — full connection URL
+    vless_link: str  # vless://...   — full connection URL
     subscription_url: str | None  # x-ui /sub/{id} link if enabled, else None
-    qr_png: bytes            # PNG bytes of VLESS link QR code
+    qr_png: bytes  # PNG bytes of VLESS link QR code
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,7 +30,7 @@ class TrafficStats:
     total_bytes: int
     limit_bytes: int
     enabled: bool
-    expiry_time_ms: int      # 0 = no expiry
+    expiry_time_ms: int  # 0 = no expiry
 
 
 @dataclass(frozen=True, slots=True)

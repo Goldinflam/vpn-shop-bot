@@ -48,9 +48,7 @@ class CryptoBotAdapter(PaymentProviderAdapter):
         self._settings = settings or get_settings()
         self._invoice_create = invoice_create
 
-    async def create(
-        self, payment: Payment, plan: Plan, user: User
-    ) -> PaymentCreatedResult:
+    async def create(self, payment: Payment, plan: Plan, user: User) -> PaymentCreatedResult:
         body: dict[str, object] = {
             "asset": payment.currency.value,
             "amount": f"{payment.amount:.2f}",

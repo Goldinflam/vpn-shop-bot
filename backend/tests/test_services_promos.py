@@ -5,9 +5,10 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from backend.models import PromoCode, User
+from backend.models import PromoCode, Server, User
 from backend.services.promos import PromoService
 from backend.services.subscriptions import SubscriptionService
+from backend.xui_pool import XUIPool
 from shared.contracts.errors import (
     PromoAlreadyUsedError,
     PromoExhaustedError,
@@ -15,21 +16,16 @@ from shared.contracts.errors import (
     PromoNotFoundError,
     TrialAlreadyClaimedError,
 )
-from shared.contracts.xui import XUIClientProtocol
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.fixture
-def subscription_service(
-    session: AsyncSession, xui_mock: XUIClientProtocol
-) -> SubscriptionService:
-    return SubscriptionService(session, xui_mock)
+def subscription_service(session: AsyncSession, xui_pool: XUIPool) -> SubscriptionService:
+    return SubscriptionService(session, xui_pool)
 
 
 @pytest.fixture
-def promo_service(
-    session: AsyncSession, subscription_service: SubscriptionService
-) -> PromoService:
+def promo_service(session: AsyncSession, subscription_service: SubscriptionService) -> PromoService:
     return PromoService(session, subscription_service)
 
 
@@ -50,7 +46,7 @@ async def _add_promo(session: AsyncSession, **kwargs: object) -> PromoCode:
         "per_user_limit": 1,
     }
     defaults.update(kwargs)
-    promo = PromoCode(**defaults)  # type: ignore[arg-type]
+    promo = PromoCode(**defaults)
     session.add(promo)
     await session.commit()
     await session.refresh(promo)
@@ -58,9 +54,12 @@ async def _add_promo(session: AsyncSession, **kwargs: object) -> PromoCode:
 
 
 async def test_create_trial_issues_vpn(
-    session: AsyncSession, promo_service: PromoService
+    session: AsyncSession,
+    promo_service: PromoService,
+    server_row: Server,
 ) -> None:
     user = await _add_user(session)
+    _ = server_row
     result = await promo_service.create_trial(user.telegram_id)
     assert result.vless_link.startswith("vless://")
     assert result.happ_import_url.startswith("happ://")
@@ -70,18 +69,24 @@ async def test_create_trial_issues_vpn(
 
 
 async def test_create_trial_twice_rejected(
-    session: AsyncSession, promo_service: PromoService
+    session: AsyncSession,
+    promo_service: PromoService,
+    server_row: Server,
 ) -> None:
     user = await _add_user(session)
+    _ = server_row
     await promo_service.create_trial(user.telegram_id)
     with pytest.raises(TrialAlreadyClaimedError):
         await promo_service.create_trial(user.telegram_id)
 
 
 async def test_apply_trial_promo_issues_vpn(
-    session: AsyncSession, promo_service: PromoService
+    session: AsyncSession,
+    promo_service: PromoService,
+    server_row: Server,
 ) -> None:
     user = await _add_user(session)
+    _ = server_row
     await _add_promo(session, code="FREE7", trial_days=7, trial_traffic_gb=10)
     result = await promo_service.apply_promo(user.telegram_id, "free7")
     assert result.is_trial is True
@@ -92,9 +97,7 @@ async def test_apply_trial_promo_issues_vpn(
     assert user.trial_used is True
 
 
-async def test_apply_promo_unknown_code(
-    session: AsyncSession, promo_service: PromoService
-) -> None:
+async def test_apply_promo_unknown_code(session: AsyncSession, promo_service: PromoService) -> None:
     await _add_user(session)
     with pytest.raises(PromoNotFoundError):
         await promo_service.apply_promo(4242, "DOESNOTEXIST")
@@ -109,9 +112,7 @@ async def test_apply_promo_inactive_rejected(
         await promo_service.apply_promo(user.telegram_id, "OLD")
 
 
-async def test_apply_promo_expired(
-    session: AsyncSession, promo_service: PromoService
-) -> None:
+async def test_apply_promo_expired(session: AsyncSession, promo_service: PromoService) -> None:
     user = await _add_user(session)
     past = datetime.now(UTC) - timedelta(days=1)
     await _add_promo(session, code="PAST", valid_until=past)
@@ -139,9 +140,12 @@ async def test_apply_promo_global_limit_exhausted(
 
 
 async def test_apply_promo_per_user_limit(
-    session: AsyncSession, promo_service: PromoService
+    session: AsyncSession,
+    promo_service: PromoService,
+    server_row: Server,
 ) -> None:
     user = await _add_user(session)
+    _ = server_row
     await _add_promo(session, code="FREE1")
     # first redemption consumes trial
     await promo_service.apply_promo(user.telegram_id, "FREE1")
@@ -149,9 +153,7 @@ async def test_apply_promo_per_user_limit(
         await promo_service.apply_promo(user.telegram_id, "FREE1")
 
 
-async def test_apply_discount_promo(
-    session: AsyncSession, promo_service: PromoService
-) -> None:
+async def test_apply_discount_promo(session: AsyncSession, promo_service: PromoService) -> None:
     user = await _add_user(session)
     await _add_promo(
         session,

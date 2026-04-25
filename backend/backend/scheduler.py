@@ -9,7 +9,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from backend.config import Settings, get_settings
 from backend.db import get_sessionmaker
 from backend.services.subscriptions import SubscriptionService
-from backend.xui import get_xui_client
+from backend.xui_pool import get_xui_pool
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 async def _expire_overdue_job() -> None:
     maker = get_sessionmaker()
     async with maker() as session:
-        service = SubscriptionService(session, get_xui_client())
+        service = SubscriptionService(session, get_xui_pool())
         try:
             n = await service.expire_overdue()
             if n:

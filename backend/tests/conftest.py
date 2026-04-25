@@ -12,7 +12,8 @@ import pytest_asyncio
 from backend.config import get_settings
 from backend.db import Base
 from backend.main import create_app
-from backend.models import Plan, User
+from backend.models import Plan, Server, User
+from backend.xui_pool import XUIPool
 from httpx import ASGITransport, AsyncClient
 from shared.contracts.http import HEADER_ADMIN_TOKEN, HEADER_BOT_TOKEN
 from shared.contracts.xui import VlessClientResult, XUIClientProtocol
@@ -24,7 +25,18 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from backend import db as db_module
-from backend import xui as xui_module
+from backend import xui_pool as xui_pool_module
+
+
+class FakeXUIPool(XUIPool):
+    """Test pool that returns the same mock client for every server."""
+
+    def __init__(self, client: XUIClientProtocol) -> None:
+        super().__init__(builder=lambda _server: client)
+        self._fixed_client = client
+
+    async def get(self, server: Server) -> XUIClientProtocol:
+        return self._fixed_client
 
 
 @pytest_asyncio.fixture
@@ -68,10 +80,35 @@ def xui_mock() -> XUIClientProtocol:
     return cast(XUIClientProtocol, mock)
 
 
+@pytest.fixture
+def xui_pool(xui_mock: XUIClientProtocol) -> FakeXUIPool:
+    return FakeXUIPool(xui_mock)
+
+
+@pytest_asyncio.fixture
+async def server_row(session: AsyncSession) -> Server:
+    """Insert a default enabled server so multi-server provisioning works."""
+    server = Server(
+        name="test",
+        country_code="XX",
+        host="https://panel.test",
+        username="admin",
+        password="admin",
+        inbound_id=1,
+        tls_verify=False,
+        enabled=True,
+    )
+    session.add(server)
+    await session.commit()
+    await session.refresh(server)
+    return server
+
+
 @pytest_asyncio.fixture
 async def client(
     sessionmaker: async_sessionmaker[AsyncSession],
-    xui_mock: XUIClientProtocol,
+    xui_pool: FakeXUIPool,
+    server_row: Server,  # ensure at least one enabled server exists
 ) -> AsyncIterator[AsyncClient]:
     # Tell the main app it is in test mode (scheduler disabled).
     import os
@@ -80,7 +117,7 @@ async def client(
     get_settings.cache_clear()
 
     db_module.set_sessionmaker(sessionmaker)
-    xui_module.set_xui_client(xui_mock)
+    xui_pool_module.set_xui_pool(xui_pool)
 
     app = create_app()
     transport = ASGITransport(app=app)

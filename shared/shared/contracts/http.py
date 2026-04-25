@@ -60,6 +60,14 @@ ADMIN_PLANS: Final[str] = "/admin/plans"
 ADMIN_PLAN: Final[str] = "/admin/plans/{plan_id}"
 ADMIN_STATS: Final[str] = "/admin/stats"
 ADMIN_BROADCAST: Final[str] = "/admin/broadcast"
+#: GET -> list[ServerOut] / POST body=ServerIn -> ServerOut
+ADMIN_SERVERS: Final[str] = "/admin/servers"
+#: GET/PATCH/DELETE -> ServerOut
+ADMIN_SERVER: Final[str] = "/admin/servers/{server_id}"
+
+# --- public (no auth) ---
+#: GET -> text/plain newline-separated VLESS list
+SUB_PUBLIC: Final[str] = "/sub/{sub_token}"
 
 # --- header names (not secrets — they are HTTP header field names) ---
 HEADER_BOT_TOKEN: Final[str] = "X-Bot-Token"  # noqa: S105

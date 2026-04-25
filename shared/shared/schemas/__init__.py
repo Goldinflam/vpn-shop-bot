@@ -12,6 +12,7 @@ from shared.schemas.promo import (
     PromoCodeOut,
     TrialCreateIn,
 )
+from shared.schemas.server import ServerIn, ServerOut, ServerUpdate
 from shared.schemas.subscription import (
     IssuedVpnOut,
     SubscriptionOut,
@@ -30,6 +31,9 @@ __all__ = [
     "PromoApplyIn",
     "PromoApplyOut",
     "PromoCodeOut",
+    "ServerIn",
+    "ServerOut",
+    "ServerUpdate",
     "SubscriptionOut",
     "SubscriptionRenew",
     "TrialCreateIn",

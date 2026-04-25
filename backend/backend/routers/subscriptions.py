@@ -63,9 +63,7 @@ async def renew_subscription(
 
 
 @router.get(SUBSCRIPTION_QR)
-async def get_subscription_qr(
-    subscription_id: int, service: SubscriptionServiceDep
-) -> Response:
+async def get_subscription_qr(subscription_id: int, service: SubscriptionServiceDep) -> Response:
     sub = await service.get(subscription_id)
     payload = sub.subscription_url or sub.vless_link
     img = qrcode.make(payload)

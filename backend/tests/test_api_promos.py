@@ -27,9 +27,7 @@ async def test_trial_create_requires_bot_token(client: AsyncClient) -> None:
     assert resp.status_code == 401
 
 
-async def test_trial_create_happy_path(
-    client: AsyncClient, bot_headers: dict[str, str]
-) -> None:
+async def test_trial_create_happy_path(client: AsyncClient, bot_headers: dict[str, str]) -> None:
     await _upsert_user(client, bot_headers, telegram_id=9101)
     resp = await client.post(
         f"{API_PREFIX}{TRIAL_CREATE}",
@@ -63,9 +61,7 @@ async def test_trial_create_twice_conflicts(
     assert r2.json()["code"] == "trial_already_claimed"
 
 
-async def test_promo_apply_unknown(
-    client: AsyncClient, bot_headers: dict[str, str]
-) -> None:
+async def test_promo_apply_unknown(client: AsyncClient, bot_headers: dict[str, str]) -> None:
     await _upsert_user(client, bot_headers, telegram_id=9103)
     resp = await client.post(
         f"{API_PREFIX}{PROMO_APPLY}",
@@ -203,14 +199,10 @@ async def test_subscription_issued_endpoint(
     assert webhook_resp.status_code == 200, webhook_resp.text
 
     # Fetch issued VPN for the subscription.
-    refreshed = await client.get(
-        f"{API_PREFIX}/payments/{payment.id}", headers=bot_headers
-    )
+    refreshed = await client.get(f"{API_PREFIX}/payments/{payment.id}", headers=bot_headers)
     assert refreshed.status_code == 200
     sub_id = refreshed.json()["subscription_id"]
-    issued = await client.get(
-        f"{API_PREFIX}/subscriptions/{sub_id}/issued", headers=bot_headers
-    )
+    issued = await client.get(f"{API_PREFIX}/subscriptions/{sub_id}/issued", headers=bot_headers)
     assert issued.status_code == 200, issued.text
     body = issued.json()
     assert body["vless_link"].startswith("vless://")

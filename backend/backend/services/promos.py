@@ -40,24 +40,25 @@ class PromoService:
         self._subscriptions = subscription_service
 
     async def _get_user(self, telegram_id: int) -> User:
-        result = await self._session.execute(
-            select(User).where(User.telegram_id == telegram_id)
-        )
+        result = await self._session.execute(select(User).where(User.telegram_id == telegram_id))
         user = result.scalar_one_or_none()
         if user is None:
             raise NotFoundError(f"User with telegram_id={telegram_id} not found")
         return user
 
     async def create_trial(self, telegram_id: int) -> IssuedVpnOut:
-        """Issue a default free trial (1 day / 2 GB) to a user who hasn't claimed one."""
+        """Issue the default free trial (24 h / 10 GB by default) to a user
+        who hasn't claimed one. Duration and traffic come from
+        ``Settings.trial_duration_hours`` / ``trial_traffic_gb``.
+        """
         user = await self._get_user(telegram_id)
         if user.trial_used:
             raise TrialAlreadyClaimedError(
                 f"User telegram_id={telegram_id} has already claimed their trial"
             )
-        subscription = await self._subscriptions.create_free(
-            user=user, days=1, traffic_gb=2
-        )
+        # ``create_free`` picks up trial defaults from settings when the
+        # caller passes neither ``days``/``hours`` nor ``traffic_gb``.
+        subscription = await self._subscriptions.create_free(user=user)
         user.trial_used = True
         await self._session.flush()
         await self._session.refresh(subscription)
@@ -82,9 +83,7 @@ class PromoService:
 
     async def _load_active_promo(self, code: str) -> PromoCode:
         normalized = code.strip().upper()
-        result = await self._session.execute(
-            select(PromoCode).where(PromoCode.code == normalized)
-        )
+        result = await self._session.execute(select(PromoCode).where(PromoCode.code == normalized))
         promo = result.scalar_one_or_none()
         if promo is None or not promo.is_active:
             raise PromoNotFoundError(f"Promo code '{normalized}' not found")
@@ -112,13 +111,9 @@ class PromoService:
         )
         count = len(list(result.scalars().all()))
         if count >= promo.per_user_limit:
-            raise PromoAlreadyUsedError(
-                f"User already redeemed promo '{promo.code}'"
-            )
+            raise PromoAlreadyUsedError(f"User already redeemed promo '{promo.code}'")
 
-    async def _redeem_trial_promo(
-        self, promo: PromoCode, user: User
-    ) -> PromoApplyOut:
+    async def _redeem_trial_promo(self, promo: PromoCode, user: User) -> PromoApplyOut:
         if promo.trial_days is None or promo.trial_traffic_gb is None:
             raise PromoError(
                 f"Promo '{promo.code}' is marked trial but missing trial_days/trial_traffic_gb"
@@ -131,7 +126,7 @@ class PromoService:
         subscription = await self._subscriptions.create_free(
             user=user,
             days=promo.trial_days,
-            traffic_gb=promo.trial_traffic_gb,
+            traffic_gb=promo.trial_traffic_gb or 0,
         )
         user.trial_used = True
 
@@ -151,9 +146,7 @@ class PromoService:
             issued=issued_vpn_from_subscription(subscription),
         )
 
-    async def _redeem_discount_promo(
-        self, promo: PromoCode, user: User
-    ) -> PromoApplyOut:
+    async def _redeem_discount_promo(self, promo: PromoCode, user: User) -> PromoApplyOut:
         if promo.discount_percent is None or not (0 < promo.discount_percent <= 100):
             raise PromoError(
                 f"Promo '{promo.code}' has invalid discount_percent={promo.discount_percent}"
