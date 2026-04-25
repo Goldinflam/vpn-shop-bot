@@ -34,9 +34,7 @@ class WebhookVerificationResult:
 class PaymentProviderAdapter(Protocol):
     """Contract implemented by every payment provider adapter."""
 
-    async def create(
-        self, payment: Payment, plan: Plan, user: User
-    ) -> PaymentCreatedResult: ...
+    async def create(self, payment: Payment, plan: Plan, user: User) -> PaymentCreatedResult: ...
 
     async def verify_webhook(
         self, body: bytes, headers: Mapping[str, str]

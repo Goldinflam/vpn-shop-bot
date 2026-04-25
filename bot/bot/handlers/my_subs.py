@@ -9,6 +9,7 @@ from aiogram.types import CallbackQuery, Message
 from shared.schemas import SubscriptionRenew
 
 from bot.api_client import BackendClient, BackendError
+from bot.filters import MenuButton
 from bot.i18n import Translator
 from bot.keyboards.inline import subscriptions_keyboard
 
@@ -17,15 +18,13 @@ logger = logging.getLogger(__name__)
 router = Router(name="my_subs")
 
 
-@router.message(F.text)
+@router.message(MenuButton("menu.my_subs"))
 async def maybe_open_subs(
     message: Message,
     t: Translator,
     backend: BackendClient,
 ) -> None:
     """Trigger on the localized 'My subscriptions' button."""
-    if not message.text or message.text != t("menu.my_subs"):
-        return
     if message.from_user is None:
         return
     await _render_subs(message, message.from_user.id, t, backend)

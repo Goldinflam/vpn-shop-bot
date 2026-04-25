@@ -46,9 +46,7 @@ class YooKassaAdapter(PaymentProviderAdapter):
         self._settings = settings or get_settings()
         self._sdk_create = sdk_create
 
-    async def create(
-        self, payment: Payment, plan: Plan, user: User
-    ) -> PaymentCreatedResult:
+    async def create(self, payment: Payment, plan: Plan, user: User) -> PaymentCreatedResult:
         idem_key = uuid.uuid4().hex
         request_body = {
             "amount": {"value": f"{payment.amount:.2f}", "currency": payment.currency.value},
@@ -113,9 +111,7 @@ class YooKassaAdapter(PaymentProviderAdapter):
             raw=cast(dict[str, object], parsed),
         )
 
-    async def _call_create(
-        self, body: dict[str, object], idem_key: str
-    ) -> dict[str, object]:
+    async def _call_create(self, body: dict[str, object], idem_key: str) -> dict[str, object]:
         if self._sdk_create is not None:
             result = self._sdk_create(body, idem_key)
         else:

@@ -39,21 +39,15 @@ async def test_users_requires_bot_token(client: AsyncClient) -> None:
     assert resp.status_code == 401
 
 
-async def test_users_upsert_and_get(
-    client: AsyncClient, bot_headers: dict[str, str]
-) -> None:
+async def test_users_upsert_and_get(client: AsyncClient, bot_headers: dict[str, str]) -> None:
     payload = {"telegram_id": 7, "username": "a", "language_code": "en"}
-    resp = await client.post(
-        f"{API_PREFIX}{USERS_UPSERT}", json=payload, headers=bot_headers
-    )
+    resp = await client.post(f"{API_PREFIX}{USERS_UPSERT}", json=payload, headers=bot_headers)
     assert resp.status_code == 200
     body = resp.json()
     assert body["telegram_id"] == 7
     assert body["locale"] == "en"
 
-    resp = await client.get(
-        f"{API_PREFIX}{USER_GET.format(telegram_id=7)}", headers=bot_headers
-    )
+    resp = await client.get(f"{API_PREFIX}{USER_GET.format(telegram_id=7)}", headers=bot_headers)
     assert resp.status_code == 200
 
 
@@ -102,9 +96,7 @@ async def test_plans_listing(
 
 
 async def test_plan_get_404(client: AsyncClient, bot_headers: dict[str, str]) -> None:
-    resp = await client.get(
-        f"{API_PREFIX}{PLAN_GET.format(plan_id=99)}", headers=bot_headers
-    )
+    resp = await client.get(f"{API_PREFIX}{PLAN_GET.format(plan_id=99)}", headers=bot_headers)
     assert resp.status_code == 404
 
 
@@ -139,9 +131,7 @@ async def test_payment_flow_test_provider(
     )
     assert get_resp.status_code == 200
 
-    webhook_body = json.dumps(
-        {"provider_payment_id": provider_payment_id, "status": "succeeded"}
-    )
+    webhook_body = json.dumps({"provider_payment_id": provider_payment_id, "status": "succeeded"})
     webhook_resp = await client.post(
         f"{API_PREFIX}{PAYMENT_WEBHOOK.format(provider=PaymentProvider.TEST.value)}",
         content=webhook_body,
@@ -165,16 +155,12 @@ async def test_payment_flow_test_provider(
     assert sub_resp.status_code == 200
 
 
-async def test_admin_requires_admin_token(
-    client: AsyncClient, bot_headers: dict[str, str]
-) -> None:
+async def test_admin_requires_admin_token(client: AsyncClient, bot_headers: dict[str, str]) -> None:
     resp = await client.get(f"{API_PREFIX}{ADMIN_STATS}", headers=bot_headers)
     assert resp.status_code == 401
 
 
-async def test_admin_create_plan(
-    client: AsyncClient, admin_headers: dict[str, str]
-) -> None:
+async def test_admin_create_plan(client: AsyncClient, admin_headers: dict[str, str]) -> None:
     resp = await client.post(
         f"{API_PREFIX}{ADMIN_PLANS}",
         json={"name": "admin-made", "duration_days": 7, "traffic_gb": 1, "price": "19.00"},
@@ -185,9 +171,7 @@ async def test_admin_create_plan(
     assert body["name"] == "admin-made"
 
 
-async def test_admin_stats(
-    client: AsyncClient, admin_headers: dict[str, str]
-) -> None:
+async def test_admin_stats(client: AsyncClient, admin_headers: dict[str, str]) -> None:
     resp = await client.get(f"{API_PREFIX}{ADMIN_STATS}", headers=admin_headers)
     assert resp.status_code == 200
     body = resp.json()

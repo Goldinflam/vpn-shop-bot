@@ -14,9 +14,12 @@ from backend.config import get_settings
 from backend.errors import register_exception_handlers
 from backend.routers import (
     admin_router,
+    admin_servers_router,
     health_router,
     payments_router,
     plans_router,
+    promos_router,
+    subscription_public_router,
     subscriptions_router,
     users_router,
 )
@@ -37,6 +40,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     cfg = get_settings()
     scheduler: AsyncIOScheduler | None = None
     if cfg.environment != "test":
+        # XUIPool is lazy: clients are built and logged in on first
+        # subscription provisioning per server, not at startup, so we
+        # don't have to know server credentials here.
         scheduler = build_scheduler(cfg)
         scheduler.start()
     app.state.scheduler = scheduler
@@ -53,11 +59,14 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
 
     app.include_router(health_router)
+    app.include_router(subscription_public_router)  # public, no /api/v1 prefix
     app.include_router(users_router, prefix=API_PREFIX)
     app.include_router(plans_router, prefix=API_PREFIX)
     app.include_router(subscriptions_router, prefix=API_PREFIX)
     app.include_router(payments_router, prefix=API_PREFIX)
+    app.include_router(promos_router, prefix=API_PREFIX)
     app.include_router(admin_router, prefix=API_PREFIX)
+    app.include_router(admin_servers_router, prefix=API_PREFIX)
 
     return app
 

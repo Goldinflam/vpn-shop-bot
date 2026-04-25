@@ -14,10 +14,12 @@ from backend.db import get_sessionmaker
 from backend.services import (
     PaymentService,
     PlanService,
+    PromoService,
+    ServerService,
     SubscriptionService,
     UserService,
 )
-from backend.xui import get_xui_client
+from backend.xui_pool import get_xui_pool
 
 
 async def db_session() -> AsyncIterator[AsyncSession]:
@@ -41,9 +43,7 @@ async def require_bot_token(
     x_bot_token: Annotated[str | None, Header(alias=HEADER_BOT_TOKEN)] = None,
 ) -> None:
     if not x_bot_token or x_bot_token != settings.bot_api_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_bot_token"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_bot_token")
 
 
 async def require_admin_token(
@@ -51,9 +51,7 @@ async def require_admin_token(
     x_admin_token: Annotated[str | None, Header(alias=HEADER_ADMIN_TOKEN)] = None,
 ) -> None:
     if not x_admin_token or x_admin_token != settings.admin_api_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_admin_token"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_admin_token")
 
 
 def get_user_service(session: SessionDep) -> UserService:
@@ -65,7 +63,11 @@ def get_plan_service(session: SessionDep) -> PlanService:
 
 
 def get_subscription_service(session: SessionDep) -> SubscriptionService:
-    return SubscriptionService(session, get_xui_client())
+    return SubscriptionService(session, get_xui_pool())
+
+
+def get_server_service(session: SessionDep) -> ServerService:
+    return ServerService(session)
 
 
 def get_payment_service(
@@ -75,7 +77,16 @@ def get_payment_service(
     return PaymentService(session, subscription_service)
 
 
+def get_promo_service(
+    session: SessionDep,
+    subscription_service: Annotated[SubscriptionService, Depends(get_subscription_service)],
+) -> PromoService:
+    return PromoService(session, subscription_service)
+
+
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
 PlanServiceDep = Annotated[PlanService, Depends(get_plan_service)]
 SubscriptionServiceDep = Annotated[SubscriptionService, Depends(get_subscription_service)]
 PaymentServiceDep = Annotated[PaymentService, Depends(get_payment_service)]
+PromoServiceDep = Annotated[PromoService, Depends(get_promo_service)]
+ServerServiceDep = Annotated[ServerService, Depends(get_server_service)]

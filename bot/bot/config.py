@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     backend_url: str = Field("http://backend:8000", validation_alias="BACKEND_URL")
     bot_api_token: SecretStr = Field(..., validation_alias="BOT_API_TOKEN")
     admin_api_token: SecretStr | None = Field(default=None, validation_alias="ADMIN_API_TOKEN")
+    backend_timeout_s: float = Field(
+        default=30.0,
+        validation_alias="BACKEND_TIMEOUT_S",
+        description="HTTP timeout for bot->backend calls. Must cover slow x-ui login+create.",
+    )
 
     # --- Admin access ---
     bot_admin_ids_raw: str = Field(default="", validation_alias="BOT_ADMIN_IDS")

@@ -84,9 +84,7 @@ async def test_cryptobot_create_and_webhook_signature() -> None:
     assert result.provider_payment_id == "cb-1"
     assert result.payment_url == "https://cryptobot/pay/1"
 
-    body = json.dumps(
-        {"payload": {"invoice_id": "cb-1", "status": "paid"}}
-    ).encode()
+    body = json.dumps({"payload": {"invoice_id": "cb-1", "status": "paid"}}).encode()
     sig = _compute_signature("secret-token", body)
     out = await adapter.verify_webhook(body, {"crypto-pay-api-signature": sig})
     assert out.status == PaymentStatus.SUCCEEDED

@@ -60,9 +60,7 @@ async def admin_create_plan(dto: PlanCreate, service: PlanServiceDep) -> PlanOut
 
 
 @router.patch(ADMIN_PLAN, response_model=PlanOut)
-async def admin_update_plan(
-    plan_id: int, dto: PlanUpdate, service: PlanServiceDep
-) -> PlanOut:
+async def admin_update_plan(plan_id: int, dto: PlanUpdate, service: PlanServiceDep) -> PlanOut:
     plan = await service.update(plan_id, dto)
     return PlanOut.model_validate(plan)
 
@@ -77,9 +75,7 @@ async def admin_stats(session: SessionDep) -> StatsOut:
     users_total = await _scalar(session, select(func.count(User.id)))
     subscriptions_active = await _scalar(
         session,
-        select(func.count(Subscription.id)).where(
-            Subscription.status == SubscriptionStatus.ACTIVE
-        ),
+        select(func.count(Subscription.id)).where(Subscription.status == SubscriptionStatus.ACTIVE),
     )
     payments_succeeded = await _scalar(
         session,
@@ -104,9 +100,7 @@ async def admin_stats(session: SessionDep) -> StatsOut:
 async def admin_broadcast(dto: BroadcastIn, session: SessionDep) -> BroadcastOut:
     # Backend does not speak directly to users — it returns the recipient
     # count so the bot can perform the actual broadcast.
-    count = await _scalar(
-        session, select(func.count(User.id)).where(User.is_banned.is_(False))
-    )
+    count = await _scalar(session, select(func.count(User.id)).where(User.is_banned.is_(False)))
     _ = dto.text  # reserved for future audit logging
     return BroadcastOut(queued=count)
 

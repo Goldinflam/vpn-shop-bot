@@ -42,6 +42,14 @@ SUBSCRIPTION_GET: Final[str] = "/subscriptions/{subscription_id}"
 SUBSCRIPTION_RENEW: Final[str] = "/subscriptions/{subscription_id}/renew"
 #: GET -> image/png
 SUBSCRIPTION_QR: Final[str] = "/subscriptions/{subscription_id}/qr"
+#: GET -> IssuedVpnOut
+SUBSCRIPTION_ISSUED: Final[str] = "/subscriptions/{subscription_id}/issued"
+
+# --- trial & promo ---
+#: POST body=TrialCreateIn -> IssuedVpnOut
+TRIAL_CREATE: Final[str] = "/trial/create"
+#: POST body=PromoApplyIn -> PromoApplyOut
+PROMO_APPLY: Final[str] = "/promo/apply"
 
 # --- webhooks (unauthenticated, provider-signed) ---
 #: POST raw provider body -> 200
@@ -52,6 +60,14 @@ ADMIN_PLANS: Final[str] = "/admin/plans"
 ADMIN_PLAN: Final[str] = "/admin/plans/{plan_id}"
 ADMIN_STATS: Final[str] = "/admin/stats"
 ADMIN_BROADCAST: Final[str] = "/admin/broadcast"
+#: GET -> list[ServerOut] / POST body=ServerIn -> ServerOut
+ADMIN_SERVERS: Final[str] = "/admin/servers"
+#: GET/PATCH/DELETE -> ServerOut
+ADMIN_SERVER: Final[str] = "/admin/servers/{server_id}"
+
+# --- public (no auth) ---
+#: GET -> text/plain newline-separated VLESS list
+SUB_PUBLIC: Final[str] = "/sub/{sub_token}"
 
 # --- header names (not secrets — they are HTTP header field names) ---
 HEADER_BOT_TOKEN: Final[str] = "X-Bot-Token"  # noqa: S105

@@ -26,9 +26,7 @@ class TestAdapter(PaymentProviderAdapter):
     # Not a pytest test class.
     __test__ = False
 
-    async def create(
-        self, payment: Payment, plan: Plan, user: User
-    ) -> PaymentCreatedResult:
+    async def create(self, payment: Payment, plan: Plan, user: User) -> PaymentCreatedResult:
         provider_id = f"test-{uuid.uuid4().hex}"
         return PaymentCreatedResult(
             provider_payment_id=provider_id,

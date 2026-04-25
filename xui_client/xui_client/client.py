@@ -41,6 +41,7 @@ T = TypeVar("T")
 
 _DEFAULT_TIMEOUT_S: float = 10.0
 _RANDOM_SUFFIX_BYTES = 3  # 6 hex chars
+_BYTES_PER_GB = 1024 * 1024 * 1024
 
 
 class XUIClient:
@@ -239,7 +240,7 @@ class XUIClient:
             email=client_email,
             enable=True,
             expiry_time=expire_ts_ms,
-            total_gb=traffic_limit_bytes,
+            total_gb=_bytes_to_gb(traffic_limit_bytes),
             flow=flow,
             sub_id=sub_id,
             limit_ip=0,
@@ -296,7 +297,7 @@ class XUIClient:
             inbound_id=inbound_id, client_uuid=client_uuid
         )
         client.expiry_time = expire_ts_ms
-        client.total_gb = traffic_limit_bytes
+        client.total_gb = _bytes_to_gb(traffic_limit_bytes)
         client.inbound_id = inbound_id
         await self._call(lambda: self._api.client.update(client_uuid, client))
 
@@ -377,6 +378,19 @@ class XUIClient:
     # URL helper retained for potential future extensions (e.g. panel sub settings).
     def _panel_url(self, path: str) -> str:
         return urljoin(self._host + "/", path.lstrip("/"))
+
+
+def _bytes_to_gb(value: int) -> int:
+    """Convert a byte count to whole GiB for the 3x-ui ``totalGB`` field.
+
+    The panel's ``totalGB`` is interpreted as GiB (not bytes) when submitted
+    through the API. Passing bytes here results in astronomically high
+    limits that silently disable traffic accounting on some 3x-ui forks.
+    We round up so a 2 GiB plan always grants at least 2 GiB.
+    """
+    if value <= 0:
+        return 0
+    return max(1, (value + _BYTES_PER_GB - 1) // _BYTES_PER_GB)
 
 
 def _clients_of(inbound: Inbound) -> list[Client]:

@@ -8,10 +8,11 @@ from typing import cast
 from unittest.mock import AsyncMock
 
 import pytest
-from backend.models import Plan, User
+from backend.models import Plan, Server, User
 from backend.payments import TestAdapter
 from backend.services.payments import PaymentService
 from backend.services.subscriptions import SubscriptionService
+from backend.xui_pool import XUIPool
 from shared.contracts.errors import NotFoundError
 from shared.contracts.xui import XUIClientProtocol
 from shared.enums import Currency, PaymentProvider, PaymentStatus
@@ -36,18 +37,15 @@ async def _seed(session: AsyncSession) -> tuple[User, Plan]:
 
 
 async def test_create_payment_uses_test_adapter(
-    session: AsyncSession, xui_mock: XUIClientProtocol
+    session: AsyncSession, xui_pool: XUIPool, server_row: Server
 ) -> None:
     user, plan = await _seed(session)
-    subs = SubscriptionService(session, xui_mock)
-    service = PaymentService(
-        session, subs, adapters={PaymentProvider.TEST: TestAdapter()}
-    )
+    _ = server_row
+    subs = SubscriptionService(session, xui_pool)
+    service = PaymentService(session, subs, adapters={PaymentProvider.TEST: TestAdapter()})
 
     payment = await service.create(
-        PaymentCreate(
-            telegram_id=user.telegram_id, plan_id=plan.id, provider=PaymentProvider.TEST
-        )
+        PaymentCreate(telegram_id=user.telegram_id, plan_id=plan.id, provider=PaymentProvider.TEST)
     )
     await session.commit()
     assert payment.status == PaymentStatus.PENDING
@@ -55,34 +53,28 @@ async def test_create_payment_uses_test_adapter(
     assert payment.amount == plan.price
 
 
-async def test_create_payment_user_not_found(
-    session: AsyncSession, xui_mock: XUIClientProtocol
-) -> None:
-    subs = SubscriptionService(session, xui_mock)
-    service = PaymentService(
-        session, subs, adapters={PaymentProvider.TEST: TestAdapter()}
-    )
+async def test_create_payment_user_not_found(session: AsyncSession, xui_pool: XUIPool) -> None:
+    subs = SubscriptionService(session, xui_pool)
+    service = PaymentService(session, subs, adapters={PaymentProvider.TEST: TestAdapter()})
     with pytest.raises(NotFoundError):
         await service.create(
-            PaymentCreate(
-                telegram_id=999, plan_id=1, provider=PaymentProvider.TEST
-            )
+            PaymentCreate(telegram_id=999, plan_id=1, provider=PaymentProvider.TEST)
         )
 
 
 async def test_webhook_succeeds_creates_subscription(
-    session: AsyncSession, xui_mock: XUIClientProtocol
+    session: AsyncSession,
+    xui_pool: XUIPool,
+    xui_mock: XUIClientProtocol,
+    server_row: Server,
 ) -> None:
     user, plan = await _seed(session)
-    subs = SubscriptionService(session, xui_mock)
-    service = PaymentService(
-        session, subs, adapters={PaymentProvider.TEST: TestAdapter()}
-    )
+    _ = server_row
+    subs = SubscriptionService(session, xui_pool)
+    service = PaymentService(session, subs, adapters={PaymentProvider.TEST: TestAdapter()})
 
     payment = await service.create(
-        PaymentCreate(
-            telegram_id=user.telegram_id, plan_id=plan.id, provider=PaymentProvider.TEST
-        )
+        PaymentCreate(telegram_id=user.telegram_id, plan_id=plan.id, provider=PaymentProvider.TEST)
     )
     await session.commit()
 
@@ -100,14 +92,10 @@ async def test_webhook_succeeds_creates_subscription(
 
 
 async def test_webhook_unknown_payment_returns_none(
-    session: AsyncSession, xui_mock: XUIClientProtocol
+    session: AsyncSession, xui_pool: XUIPool
 ) -> None:
-    subs = SubscriptionService(session, xui_mock)
-    service = PaymentService(
-        session, subs, adapters={PaymentProvider.TEST: TestAdapter()}
-    )
-    body = json.dumps(
-        {"provider_payment_id": "never-seen", "status": "succeeded"}
-    ).encode()
+    subs = SubscriptionService(session, xui_pool)
+    service = PaymentService(session, subs, adapters={PaymentProvider.TEST: TestAdapter()})
+    body = json.dumps({"provider_payment_id": "never-seen", "status": "succeeded"}).encode()
     result = await service.handle_webhook(PaymentProvider.TEST, body, {})
     assert result is None
