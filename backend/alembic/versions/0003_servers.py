@@ -51,10 +51,16 @@ def upgrade() -> None:
         sa.Column("public_host", sa.String(length=255), nullable=True),
         sa.Column("subscription_base_url", sa.Text(), nullable=True),
         sa.Column(
-            "tls_verify", sa.Boolean(), nullable=False, server_default="1"
+            "tls_verify",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.text("true"),
         ),
         sa.Column(
-            "enabled", sa.Boolean(), nullable=False, server_default="1"
+            "enabled",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.text("true"),
         ),
         sa.Column(
             "created_at",
@@ -82,7 +88,10 @@ def upgrade() -> None:
         sa.Column("xui_email", sa.String(length=128), nullable=False),
         sa.Column("vless_link", sa.Text(), nullable=False),
         sa.Column(
-            "enabled", sa.Boolean(), nullable=False, server_default="1"
+            "enabled",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.text("true"),
         ),
         sa.Column(
             "created_at",
@@ -150,9 +159,11 @@ def upgrade() -> None:
     if legacy_host:
         bind.execute(
             sa.text(
-                "INSERT INTO servers (name, country_code, host, username, password, "
-                "inbound_id, public_host, subscription_base_url, tls_verify, enabled) "
-                "VALUES (:name, :cc, :host, :u, :p, :inb, NULL, :sub, :tls, 1)"
+                "INSERT INTO servers (name, country_code, host, username, "
+                "password, inbound_id, public_host, subscription_base_url, "
+                "tls_verify, enabled) "
+                "VALUES (:name, :cc, :host, :u, :p, :inb, NULL, :sub, "
+                ":tls, :en)"
             ),
             {
                 "name": "default",
@@ -162,7 +173,8 @@ def upgrade() -> None:
                 "p": legacy_pass,
                 "inb": legacy_inbound,
                 "sub": legacy_sub,
-                "tls": 1 if legacy_tls else 0,
+                "tls": bool(legacy_tls),
+                "en": True,
             },
         )
         # Backfill subscription_clients for existing subs against the new server.
@@ -183,7 +195,7 @@ def upgrade() -> None:
                         "INSERT INTO subscription_clients "
                         "(subscription_id, server_id, xui_inbound_id, "
                         "xui_client_uuid, xui_email, vless_link, enabled) "
-                        "VALUES (:s, :sv, :i, :u, :e, :v, 1)"
+                        "VALUES (:s, :sv, :i, :u, :e, :v, :en)"
                     ),
                     {
                         "s": sub_id,
@@ -192,6 +204,7 @@ def upgrade() -> None:
                         "u": client_uuid,
                         "e": email,
                         "v": vless,
+                        "en": True,
                     },
                 )
 
